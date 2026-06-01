@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アポイント・契約管理 - 2部</title>
+<style>
+/*
+==============================================
+  アポイント・契約管理ボード - 2部
+  Notion DB ID: 84a0074d4a714d2694de89262f557fa9
+  ・本日分：日付フィルター = 今日
+  ・翌日以降：日付フィルター = 今日より後
+  ・課ごとのカード表示（翌日以降）
+==============================================
+*/
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif}
+:root{--navy:#1a2744;--gold:#c8a040;--red:#c8372a;--green:#2e9e68;--blue:#2c72c7;--bg:#f7f7f9;--card:#fff;--border:#e4e4ee;--text:#1a1a2e;--text2:#5a5a72;--text3:#9898aa}
+#app{width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;display:flex;flex-direction:column;overflow:hidden;font-size:clamp(7px,0.82vw,11px);background:var(--bg)}
+
+/* ヘッダー */
+#header{background:var(--navy);color:#fff;padding:0.3em 1em;display:flex;align-items:center;gap:1em;flex-shrink:0;border-bottom:2px solid var(--gold)}
+.hdr-dept{background:var(--gold);color:#000;padding:0.2em 0.75em;border-radius:4px;font-size:0.95em;font-weight:700}
+.hdr-title{font-size:1.4em;font-weight:700;letter-spacing:0.06em}
+.hdr-date{font-size:0.88em;opacity:0.65}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:0.8em}
+.hdr-cnt{font-size:0.82em;opacity:0.7}
+.hdr-cnt span{color:#fff;font-weight:700;opacity:1}
+.hdr-cnt span.red{color:#ff9999}
+.hdr-status{font-size:0.68em;color:rgba(255,255,255,0.45)}
+.refresh-btn{font-size:0.7em;padding:0.28em 0.7em;border:1px solid rgba(255,255,255,0.3);border-radius:4px;background:transparent;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.15s}
+.refresh-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+
+/* セクションヘッダー */
+.section-hd{background:var(--navy);color:#fff;padding:0.2em 0.8em;font-size:0.82em;font-weight:700;letter-spacing:0.06em;flex-shrink:0;display:flex;align-items:center;gap:0.6em}
+.cnt-badge{background:rgba(255,255,255,0.15);border-radius:3px;padding:0.05em 0.4em;font-size:0.88em}
+.cnt-badge.red{background:rgba(200,55,42,0.4)}
+
+/* 本日セクション */
+#today-section{flex:0 0 55%;display:flex;flex-direction:column;border-bottom:2px solid var(--gold);overflow:hidden}
+#today-cols{flex:1;display:grid;gap:0.3em;padding:0.3em 0.5em;overflow:hidden}
+.today-col{display:flex;flex-direction:column;gap:0.12em;overflow:hidden}
+.col-thead{display:grid;grid-template-columns:2.8em 4.5em 6em 5em 1fr;background:#eef0f6;border-radius:4px;flex-shrink:0}
+.col-th{padding:0.22em 0.4em;font-size:0.7em;font-weight:700;color:var(--text2);letter-spacing:0.04em;white-space:nowrap}
+.trow{display:grid;grid-template-columns:2.8em 4.5em 6em 5em 1fr;align-items:center;padding:0.18em 0.4em;border-radius:4px;border:0.5px solid var(--border);background:var(--card);flex:1;min-height:0}
+.trow.keiyaku{background:#fff8f8;border-color:#f0d0d0}
+.td{font-size:0.85em;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td.time{font-weight:700;font-variant-numeric:tabular-nums}
+.td.time.red{color:var(--red)}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;font-size:0.7em;font-weight:700;border:1.5px solid}
+.bd-d{border-color:var(--blue);color:var(--blue);background:#e6f1fb}
+.bd-a{border-color:var(--green);color:var(--green);background:#edf7f2}
+.bd-n{border-color:#aaa;color:#888;background:#f5f5f5}
+.ktag{display:inline-block;background:#fff0f0;color:var(--red);border:1px solid #f0cccc;border-radius:3px;padding:0.04em 0.28em;font-size:0.67em;font-weight:700;margin-left:0.25em;vertical-align:middle}
+.bukken{font-size:0.72em;color:var(--red);display:block}
+.empty-msg{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text3);font-size:0.9em}
+
+/* 翌日以降セクション */
+#future-section{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#future-cards{flex:1;display:grid;gap:0.3em;padding:0.28em 0.5em;overflow:hidden;min-height:0}
+.course-card{background:var(--card);border-radius:6px;border:0.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.card-hd{background:var(--navy);color:#fff;padding:0.22em 0.5em;font-size:0.8em;font-weight:700;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.card-hd-sub{font-size:0.78em;font-weight:400;opacity:0.7}
+.card-body{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0.12em;padding:0.18em 0.35em;min-height:0}
+.card-row{display:flex;align-items:flex-start;gap:0.22em;flex-shrink:0;border-bottom:0.5px solid #f5f5f5;padding-bottom:0.1em}
+.card-row:last-child{border-bottom:none;padding-bottom:0}
+.card-row.k{background:#fff5f5;border-radius:3px;padding:0.06em 0.22em}
+.card-date{font-size:0.68em;font-weight:700;color:var(--text2);white-space:nowrap;flex-shrink:0;min-width:3em;line-height:1.3}
+.card-date.red{color:var(--red)}
+.card-info{font-size:0.72em;color:var(--text);overflow:hidden;flex:1;line-height:1.35}
+.card-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-place{color:var(--text3);font-size:0.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-empty{font-size:0.72em;color:#c0c0cc;text-align:center;padding-top:0.4em}
+
+/* ローディング */
+.spinner{width:1.6em;height:1.6em;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite;margin:auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div class="hdr-dept">2部</div>
+    <div class="hdr-title">アポイント・契約管理</div>
+    <div class="hdr-date" id="hdr-date"></div>
+    <div class="hdr-right">
+      <div class="hdr-cnt">本日 アポ<span id="cnt-apo">-</span>件 / 契約<span class="red" id="cnt-k">-</span>件</div>
+      <div class="hdr-status" id="hdr-status"></div>
+      <button class="refresh-btn" onclick="load()">↻ 更新</button>
+    </div>
+  </div>
+
+  <div id="today-section">
+    <div class="section-hd">
+      📋 本日のアポイント・契約
+      <span class="cnt-badge" id="badge-apo"></span>
+      <span class="cnt-badge red" id="badge-k"></span>
+    </div>
+    <div id="today-cols"><div class="spinner" style="margin-top:2em"></div></div>
+  </div>
+
+  <div id="future-section">
+    <div class="section-hd">📅 翌日以降のアポイント・契約（課ごと）</div>
+    <div id="future-cards"><div class="spinner" style="margin-top:1em"></div></div>
+  </div>
+</div>
+
+<script>
+const DB_ID = '84a0074d4a714d2694de89262f557fa9';
+
+// ===== 課の一覧（部内の課を定義。設定から変更してください） =====
+const COURSES = ['川崎課','依田課','井岡課','宮下課','松浦課','土居課'];
+
+function isoToday(){ return new Date().toISOString().slice(0,10); }
+function isoTomorrow(){ const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+
+function initHeader(){
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+
+function getProp(page,name){
+  const p=page.properties[name];
+  if(!p)return '';
+  if(p.type==='title')return p.title.map(t=>t.plain_text).join('');
+  if(p.type==='rich_text')return p.rich_text.map(t=>t.plain_text).join('');
+  if(p.type==='select')return p.select?.name||'';
+  if(p.type==='date')return p.date?.start||'';
+  return '';
+}
+
+async function queryNotion(filter){
+  const r=await fetch('/api/notion',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({dbId:DB_ID,filter})
+  });
+  if(!r.ok)throw new Error('サーバーエラー '+r.status);
+  return r.json();
+}
+
+function pageToRow(p){
+  return {
+    shukaku: getProp(p,'集客手段'),
+    time:    getProp(p,'時刻'),
+    customer:getProp(p,'お客様名'),
+    tanto:   getProp(p,'担当者名'),
+    place:   getProp(p,'場所'),
+    type:    getProp(p,'種別')==='契約予定'?'keiyaku':'apo',
+    bukken:  getProp(p,'物件名'),
+    bukkenNo:getProp(p,'物件番号'),
+    date:    getProp(p,'日付'),
+    course:  getProp(p,'担当者名'), // 課の判定は担当者名から行う場合は変更
+  };
+}
+
+const THEAD=`<div class="col-thead">
+  <div class="col-th">集客</div><div class="col-th">時刻</div>
+  <div class="col-th">お客様</div><div class="col-th">担当</div>
+  <div class="col-th">場所 / 物件</div>
+</div>`;
+
+function makeRow(r){
+  const isK=r.type==='keiyaku';
+  const shukaku=r.shukaku;
+  const bc=shukaku==='D（電話）'?'bd-d':shukaku==='A（アンケート・紹介）'?'bd-a':'bd-n';
+  const bt=shukaku==='D（電話）'?'D':shukaku==='A（アンケート・紹介）'?'A':'－';
+  const bukkenStr=[r.bukken,r.bukkenNo].filter(Boolean).join(' ');
+  return `<div class="trow${isK?' keiyaku':''}">
+    <div class="td"><span class="badge ${bc}">${bt}</span></div>
+    <div class="td time${isK?' red':''}">${r.time||'－'}${isK?'<span class="ktag">契約</span>':''}</div>
+    <div class="td">${r.customer?r.customer+'様':'－'}</div>
+    <div class="td">${r.tanto||'－'}</div>
+    <div class="td">${r.place||'－'}${isK&&bukkenStr?`<span class="bukken">${bukkenStr}</span>`:''}
+    </div>
+  </div>`;
+}
+
+function renderToday(rows){
+  const sorted=[...rows].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const apoN=sorted.filter(r=>r.type==='apo').length;
+  const kN=sorted.filter(r=>r.type==='keiyaku').length;
+  document.getElementById('cnt-apo').textContent=apoN;
+  document.getElementById('cnt-k').textContent=kN;
+  document.getElementById('badge-apo').textContent='アポ '+apoN+'件';
+  document.getElementById('badge-k').textContent='契約 '+kN+'件';
+
+  const container=document.getElementById('today-cols');
+  if(sorted.length===0){
+    container.innerHTML='<div class="empty-msg">本日のアポイントはまだ登録されていません</div>';
+    return;
+  }
+  const needCols=Math.min(3,Math.ceil(sorted.length/5)||1);
+  const perCol=Math.ceil(sorted.length/needCols);
+  container.style.gridTemplateColumns=`repeat(${needCols},1fr)`;
+  container.innerHTML='';
+  for(let ci=0;ci<needCols;ci++){
+    const chunk=sorted.slice(ci*perCol,(ci+1)*perCol);
+    const div=document.createElement('div');
+    div.className='today-col';
+    div.innerHTML=THEAD+chunk.map(makeRow).join('');
+    container.appendChild(div);
+  }
+}
+
+function renderFuture(rows){
+  const fc=document.getElementById('future-cards');
+  // 課ごとに仕分け
+  const courseMap={};
+  COURSES.forEach(c=>{courseMap[c]=[];});
+  rows.forEach(r=>{
+    // 「担当者名」から課を判定する場合はここを調整
+    // Notionに「課名」プロパティを追加した場合は getProp(p,'課名') を使う
+    const courseName=getProp_raw(r,'課名')||'不明';
+    if(courseMap[courseName]) courseMap[courseName].push(r);
+    else if(courseMap['不明']) courseMap['不明'].push(r);
+  });
+
+  const courseCount=COURSES.length;
+  fc.style.gridTemplateColumns=`repeat(${courseCount},1fr)`;
+  fc.innerHTML='';
+  COURSES.forEach(courseName=>{
+    const items=courseMap[courseName]||[];
+    const card=document.createElement('div');
+    card.className='course-card';
+    const apoN=items.filter(i=>i.type==='apo').length;
+    const kN=items.filter(i=>i.type==='keiyaku').length;
+    card.innerHTML=`
+      <div class="card-hd">
+        <span>${courseName}</span>
+        <span class="card-hd-sub">アポ${apoN} 契約${kN}</span>
+      </div>
+      <div class="card-body">${
+        items.length===0
+          ?'<div class="card-empty">予定なし</div>'
+          :items.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(i=>{
+            const isK=i.type==='keiyaku';
+            const bukkenStr=[i.bukken,i.bukkenNo].filter(Boolean).join(' ');
+            const dateStr=i.date?i.date.slice(5).replace('-','/')+'':'-';
+            return `<div class="card-row${isK?' k':''}">
+              <div class="card-date${isK?' red':''}">${dateStr}<br>${i.time||''}</div>
+              <div class="card-info">
+                <div class="card-name">${i.customer?i.customer+'様':''}　${i.tanto||''}</div>
+                <div class="card-place">${i.place||''}${isK&&bukkenStr?' ▶'+bukkenStr:''}</div>
+              </div>
+            </div>`;
+          }).join('')
+      }</div>`;
+    fc.appendChild(card);
+  });
+}
+
+// Notionページから直接課名を取得するためのヘルパー
+let rawPages=[];
+function getProp_raw(r, name){ return r['_raw_'+name]||''; }
+
+async function load(){
+  document.getElementById('hdr-status').textContent='更新中...';
+  try{
+    const today=isoToday();
+    const tomorrow=isoTomorrow();
+    const [todayData,futureData]=await Promise.all([
+      queryNotion({property:'日付',date:{equals:today}}),
+      queryNotion({property:'日付',date:{on_or_after:tomorrow}})
+    ]);
+
+    // 本日
+    const todayRows=(todayData.results||[]).map(p=>{
+      const r=pageToRow(p);
+      return r;
+    });
+    renderToday(todayRows);
+
+    // 翌日以降：課名プロパティがある場合はそこから取得
+    const futureRows=(futureData.results||[]).map(p=>{
+      const r=pageToRow(p);
+      // 課名プロパティを直接取得
+      r['_raw_課名']=getProp(p,'担当課'); // Notionの課名プロパティ名に合わせて変更
+      return r;
+    });
+    renderFuture(futureRows);
+
+    document.getElementById('hdr-status').textContent='更新 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    document.getElementById('hdr-status').textContent='エラー: '+e.message;
+  }
+}
+
+initHeader();
+load();
+setInterval(load,3*60*1000);
+</script>
+</body>
+</html>
