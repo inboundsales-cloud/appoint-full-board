@@ -1,1 +1,9 @@
-{}
+{
+  "rewrites": [
+    { "source": "/dept1", "destination": "/dept1.html" },
+    { "source": "/dept2", "destination": "/dept2.html" },
+    { "source": "/dept3", "destination": "/dept3.html" },
+    { "source": "/dept5", "destination": "/dept5.html" },
+    { "source": "/dept7", "destination": "/dept7.html" }
+  ]
+}
