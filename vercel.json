@@ -1,1 +1,11 @@
-{}
+{
+  "routes": [
+    { "src": "/api/notion", "dest": "/api/notion.js" },
+    { "src": "/dept1", "dest": "/dept1.html" },
+    { "src": "/dept2", "dest": "/dept2.html" },
+    { "src": "/dept3", "dest": "/dept3.html" },
+    { "src": "/dept5", "dest": "/dept5.html" },
+    { "src": "/dept7", "dest": "/dept7.html" },
+    { "src": "/", "dest": "/dept1.html" }
+  ]
+}
